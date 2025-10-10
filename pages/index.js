@@ -1,115 +1,108 @@
-import Image from "next/image";
-import { Geist, Geist_Mono } from "next/font/google";
+import React, { useState, useEffect } from 'react';
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+// A simple utility to format seconds into a readable string
+const formatTime = (seconds) => {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  return [h, m, s]
+    .map((v) => (v < 10 ? '0' + v : v))
+    .filter((v, i) => v !== '00' || i > 0)
+    .join(':') || '0s';
+};
 
 export default function Home() {
+  const [data, setData] = useState({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    // The 'chrome' object is only available in the extension environment.
+    // We check for its existence to avoid errors during development.
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      chrome.storage.local.get(null, (items) => {
+        // Sort items by time spent, descending
+        const sortedData = Object.entries(items)
+          .sort(([, a], [, b]) => b - a)
+          .reduce((r, [k, v]) => ({ ...r, [k]: v }), {});
+        
+        setData(sortedData);
+        setIsLoading(false);
+      });
+
+      // Also listen for real-time changes
+      const storageListener = (changes, namespace) => {
+        if (namespace === 'local') {
+          let updatedData = { ...data };
+          for (let [key, { newValue }] of Object.entries(changes)) {
+            updatedData[key] = newValue;
+          }
+           const sortedData = Object.entries(updatedData)
+            .sort(([, a], [, b]) => b - a)
+            .reduce((r, [k, v]) => ({ ...r, [k]: v }), {});
+          setData(sortedData);
+        }
+      };
+
+      chrome.storage.onChanged.addListener(storageListener);
+
+      // Cleanup listener on component unmount
+      return () => {
+        chrome.storage.onChanged.removeListener(storageListener);
+      };
+
+    } else {
+      // We are not in the extension environment, provide mock data for development
+      console.log("Not in extension environment. Using mock data.");
+      setData({
+        'github.com': 3665,
+        'stackoverflow.com': 1250,
+        'developer.chrome.com': 850,
+      });
+      setIsLoading(false);
+    }
+  }, []); // Empty dependency array means this runs once on mount
+
+  const handleReset = () => {
+     if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+         chrome.storage.local.clear(() => {
+             setData({});
+             console.log('All tracking data cleared.');
+         });
+     } else {
+         alert('This feature is only available within the Chrome extension.');
+     }
+  };
+
   return (
-    <div
-      className={`${geistSans.className} ${geistMono.className} font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20`}
-    >
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              pages/index.js
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+    <div className="w-80 bg-slate-900 text-white font-sans p-4">
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-xl font-bold text-cyan-400">Productivity Tracker</h1>
+        <button 
+          onClick={handleReset}
+          className="bg-red-500 hover:bg-red-700 text-white text-xs font-bold py-1 px-2 rounded-md transition-colors duration-200"
+          title="Reset all data"
         >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+          Reset
+        </button>
+      </div>
+
+      <div className="max-h-96 overflow-y-auto">
+        {isLoading ? (
+          <p className="text-slate-400">Loading data...</p>
+        ) : Object.keys(data).length === 0 ? (
+          <p className="text-slate-400 text-center py-4">No websites tracked yet. Start browsing!</p>
+        ) : (
+          <ul className="space-y-2">
+            {Object.entries(data).map(([domain, time]) => (
+              <li key={domain} className="flex justify-between items-center bg-slate-800 p-2 rounded-lg shadow">
+                <span className="text-sm font-medium text-slate-300 truncate w-4/6" title={domain}>{domain}</span>
+                <span className="text-sm font-semibold bg-cyan-500 text-slate-900 px-2 py-1 rounded-md">{formatTime(time)}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }
