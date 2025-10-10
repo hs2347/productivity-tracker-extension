@@ -16,7 +16,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
+useEffect(() => {
     // The 'chrome' object is only available in the extension environment.
     // We check for its existence to avoid errors during development.
     if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
@@ -33,14 +33,25 @@ export default function Home() {
       // Also listen for real-time changes
       const storageListener = (changes, namespace) => {
         if (namespace === 'local') {
-          let updatedData = { ...data };
-          for (let [key, { newValue }] of Object.entries(changes)) {
-            updatedData[key] = newValue;
-          }
-           const sortedData = Object.entries(updatedData)
-            .sort(([, a], [, b]) => b - a)
-            .reduce((r, [k, v]) => ({ ...r, [k]: v }), {});
-          setData(sortedData);
+          // Use the functional update form to get the previous state
+          setData(prevData => {
+            const updatedData = { ...prevData };
+            for (let [key, { newValue }] of Object.entries(changes)) {
+              if (newValue === undefined) {
+                // The item was removed from storage (e.g., after a reset)
+                delete updatedData[key];
+              } else {
+                // The item was added or updated
+                updatedData[key] = newValue;
+              }
+            }
+            // Re-sort the data with the new changes
+            const sortedData = Object.entries(updatedData)
+              .sort(([, a], [, b]) => b - a)
+              .reduce((r, [k, v]) => ({ ...r, [k]: v }), {});
+            
+            return sortedData;
+          });
         }
       };
 
@@ -61,7 +72,7 @@ export default function Home() {
       });
       setIsLoading(false);
     }
-  }, []); // Empty dependency array means this runs once on mount
+  }, []); // Empty dependency array is correct here
 
   const handleReset = () => {
      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
