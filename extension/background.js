@@ -1,9 +1,6 @@
-// This script runs in the background and tracks website usage.
-
 let activeTabUrl = null;
 let startTime = null;
 
-// Function to get the domain from a URL
 function getDomain(url) {
   try {
     return new URL(url).hostname;

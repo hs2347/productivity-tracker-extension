@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-
+import Link from 'next/link';
 // A simple utility to format seconds into a readable string
 const formatTime = (seconds) => {
   const h = Math.floor(seconds / 3600);
@@ -89,13 +89,23 @@ useEffect(() => {
     <div className="w-80 bg-slate-900 text-white font-sans p-4">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-xl font-bold text-cyan-400">Productivity Tracker</h1>
-        <button 
-          onClick={handleReset}
-          className="bg-red-500 hover:bg-red-700 text-white text-xs font-bold py-1 px-2 rounded-md transition-colors duration-200"
-          title="Reset all data"
-        >
-          Reset
-        </button>
+        <div className="flex space-x-2">
+          <Link href="/analytics" legacyBehavior>
+            <a className="bg-cyan-500 hover:bg-cyan-600 text-slate-900 text-xs font-bold py-1 px-2 rounded-md transition-colors duration-200"
+               title="Show Analytics"
+            >
+              Chart
+            </a>
+          </Link>
+          <button 
+            onClick={handleReset}
+            className="bg-red-500 hover:bg-red-700 text-white text-xs font-bold py-1 px-2 rounded-md transition-colors duration-200"
+            title="Reset all data"
+          >
+            Reset
+          </button>
+        </div>      
+
       </div>
 
       <div className="max-h-96 overflow-y-auto">
