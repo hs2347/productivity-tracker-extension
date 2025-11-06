@@ -91,13 +91,9 @@ export default function Home() {
 
   const handleReset = () => {
      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-         // 1. Clear all time data from storage
-         chrome.storage.local.clear(() => {
-             setData({});
-             console.log('All tracking data cleared.');
-         });
          
-         // 2. Tell background script to clear blocking rules and its list
+         
+         //  Tell background script to clear blocking rules and its list
          chrome.runtime.sendMessage({ type: 'resetSession' }, (response) => {
             if (response.success) {
               setBlockedList([]); // Clear UI list
@@ -111,7 +107,7 @@ export default function Home() {
      }
   };
 
-  // --- New: Handler for adding a blocked domain ---
+  //  Handler for adding a blocked domain ---
   const handleAddBlock = () => {
     if (!blockInput || isBlocking) return;
     
