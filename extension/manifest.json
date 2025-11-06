@@ -3,7 +3,10 @@
   "name": "Productivity Tracker",
   "version": "1.0",
   "description": "Tracks time spent on websites to boost your productivity.",
-  "permissions": ["tabs", "storage", "idle"],
+  "permissions": ["tabs", "storage", "idle", "declarativeNetRequest"],
+  "host_permissions": [
+    "<all_urls>"
+  ],
   "action": {
     "default_popup": "index.html",
     "default_icon": {
